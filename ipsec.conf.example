@@ -1,0 +1,125 @@
+conn rw-base
+    # enables IKE fragmentation 
+    fragmentation=yes
+    dpdaction=clear
+    # dpdtimeout is not honored for ikev2. For IKEv2, every message is used
+    # to determine the timeout, so the generic timeout value for IKEv2 messages
+    # is used. 
+    dpdtimeout=90s
+    dpddelay=30s
+
+# this is used in every conn in which the client is assigned a "virtual" IP or
+# one or several DNS servers    
+# the cipher suits require the openssl plugin.
+conn rw-config
+    also=rw-base
+    rightsourceip=172.16.252.0/24
+    # set this to a local DNS server that the clients can reach with their assigned IPs.
+    # Think about routing.
+    rightdns=
+    leftsubnet=0.0.0.0/0
+    leftid=whatevertheclientusestoconnect
+    leftcert=mycertificate.pem
+    # not possible with asymmetric authentication
+    reauth=no
+    rekey=no
+    # secure cipher suits
+    ike=aes192gcm16-aes128gcm16-prfsha256-ecp256-ecp521,aes192-sha256-modp3072,default
+    esp=aes192gcm16-aes128gcm16-ecp256-modp3072,aes192-sha256-ecp256-modp3072
+    leftsendcert=always
+    rightca="C=This, O=Is, OU=My, CN=CA" 
+
+# this conn is set up for l2tp support where the user authentication is happening
+# in the l2tp control connection. With L2TP, clients are usually not assigned
+# a virtual IP in IKE.
+# Charon is not an l2tp server. You need to install xl2tp for that and configure it correctly.
+# mark=%unique requires the connmark plugin.
+conn ikev1-l2tp-chap-auth-in-l2tp
+    also=rw-base
+    # reduce to the most secure combination the client can support, if absolutely required.
+    ike=aes128-sha256-modp3072
+    esp=aes128-sha256-modp3072
+    leftsubnet=%dynamic[/1701]
+    rightsubnet=%dynamic
+    mark=%unique
+    leftauth=psk
+    rightauth=psk
+    type=transport
+    auto=add
+
+# this conn is set up for l2tp support where the user authentication is happening
+# during the IKEv1 authentication. With L2TP, clients are usually not assigned
+# a virtual IP in IKE.
+# mark=%unique requires the connmark plugin.
+# this requires the xauth-generic plugin.
+conn ikev1-l2tp-xauth-in-ike
+    also=rw-base
+    # reduce to the most secure combination the client can support, if absolutely required.
+    ike=aes128-sha256-modp3072
+    esp=aes128-sha256-modp3072
+    leftsubnet=%dynamic[/1701]
+    rightsubnet=%dynamic
+    mark=%unique
+    leftauth=psk
+    rightauth=psk
+    rightauth2=xauth-generic
+    xauth=server
+    # not possible with asymmetric authentication
+    reauth=no
+    rekey=no
+    type=transport
+    auto=add
+
+# this requires the xauth-generic plugin.
+conn ikev1-psk-xauth
+    also=rw-config
+    leftauth=psk
+    rightauth=psk
+    rightauth2=xauth-generic
+    xauth=server
+    auto=add
+
+# leftauth and rightauth default to "pubkey", so no change necessary.
+conn ikev1-pubkey
+    also=rw-config
+    auto=add
+
+# this requires the xauth-generic plugin.
+conn ikev1-pubkey-xauth
+    also=rw-config
+    rightauth2=xauth-generic
+    xauth=server
+    auto=add
+
+# this requires the xauth-generic plugin.
+conn ikev1-hybrid
+    also=rw-config
+    rightauth=xauth-generic
+    xauth=server
+
+conn ikev2-pubkey
+    also=rw-config
+    auto=add
+
+# IF you need to support several EAP methods at the same time, you need to use eap-dynamic
+# and not use any other conn with eap settings. Add the settings for the eap-dynamic plugin to your strongswan.conf file.
+
+conn ikev2-eap
+    also=rw-config
+    rightauth=eap-dynamic
+    eap_identity=%identity
+    auto=add
+
+# this requires the eap-tls plugin.
+conn ikev2-eap-tls
+    also=rw-base
+    rightauth=eap-tls
+    eap_identity=%identity
+    auto=add
+
+# this requires the eap-mschapv2 plugin.
+conn ikev2-eap-mschapv2
+    also=rw-config
+    rightauth=eap-mschapv2
+    eap_identity=%identity
+    auto=add

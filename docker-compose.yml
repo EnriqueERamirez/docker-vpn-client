@@ -1,0 +1,17 @@
+version: '3'
+
+services:
+  vpn_ssh_client:
+    build: .
+    volumes:
+      - ./ssh-keys:/root/.ssh
+    environment:
+      - VPN_SERVER=your.vpn.server
+      - VPN_USER=yourvpnuser
+      - VPN_PASSWORD=yourvpnpass
+    networks:
+      - net
+
+networks:
+  net:
+
