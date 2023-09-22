@@ -3,6 +3,7 @@ version: '3'
 services:
   vpn_ssh_client:
     build: .
+    privileged: true
     volumes:
       - ./ssh-keys:/root/.ssh
     environment:
