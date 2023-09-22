@@ -5,8 +5,8 @@ RUN apk add --no-cache \
     openssh-client \
     ca-certificates \
     bash \
-    strongswan
-
+    strongswan \
+    busybox-extras
 # Copiar archivos de configuración de IPSec al contenedor
 COPY ./ipsec.conf /etc/ipsec.conf
 COPY ./ipsec.secrets /etc/ipsec.secrets
